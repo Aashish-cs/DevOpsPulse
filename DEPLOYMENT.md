@@ -24,7 +24,7 @@ npm run seed
 Create a Render Web Service, not a cron service.
 
 - Root directory: repository root
-- Build command: `npm install && npm run prisma:generate && npm run build -w backend`
+- Build command: `npm install --include=dev && npm run prisma:generate && npm run build -w backend`
 - Start command: `npm run start -w backend`
 - Environment variables:
   - `DATABASE_URL`: Neon/Supabase PostgreSQL connection string

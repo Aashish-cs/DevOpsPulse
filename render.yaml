@@ -3,7 +3,7 @@ services:
     name: devopspulse-api
     runtime: node
     plan: free
-    buildCommand: npm install && npm run prisma:generate && npm run build -w backend
+    buildCommand: npm install --include=dev && npm run prisma:generate && npm run build -w backend
     startCommand: npm run start -w backend
     envVars:
       - key: NODE_ENV
