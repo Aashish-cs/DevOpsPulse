@@ -23,15 +23,17 @@ npm run seed
 
 Create a Render Web Service, not a cron service.
 
-- Root directory: `backend`
-- Build command: `npm install && npm run prisma:generate && npm run build`
-- Start command: `npm run start`
+- Root directory: repository root
+- Build command: `npm install && npm run prisma:generate && npm run build -w backend`
+- Start command: `npm run start -w backend`
 - Environment variables:
   - `DATABASE_URL`: Neon/Supabase PostgreSQL connection string
   - `JWT_SECRET`: long random string, at least 32 characters
   - `CRON_SECRET`: long random string used by the external cron trigger
   - `FRONTEND_URL`: your Vercel frontend URL, for example `https://devopspulse.vercel.app`
   - `NODE_ENV`: `production`
+
+You can also use the included `render.yaml` as a starter Blueprint for the backend web service. Set the secret environment variables in Render after creating the service.
 
 After the first deploy, run Prisma migrations against the same database.
 
@@ -58,6 +60,8 @@ Create a Vercel project from the same repository.
 - Output directory: `dist`
 - Environment variables:
   - `VITE_API_URL`: `https://YOUR-BACKEND.onrender.com/api`
+
+The included `frontend/vercel.json` handles React Router fallback routes.
 
 The backend sets the JWT in an httpOnly cookie. In production the cookie is configured with `SameSite=None` and `Secure`, so HTTPS is required.
 
