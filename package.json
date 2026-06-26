@@ -1,0 +1,27 @@
+{
+  "name": "devopspulse",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack uptime monitoring platform portfolio project.",
+  "workspaces": [
+    "backend",
+    "frontend"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "dev:backend": "npm run dev -w backend",
+    "dev:frontend": "npm run dev -w frontend",
+    "build": "npm run build -w backend && npm run build -w frontend",
+    "test": "npm run test -w backend",
+    "prisma:generate": "npm run prisma:generate -w backend",
+    "seed": "npm run seed -w backend"
+  },
+  "overrides": {
+    "@types/cookie-parser": {
+      "@types/express": "4.17.25"
+    }
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.2"
+  }
+}

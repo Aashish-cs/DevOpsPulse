@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum MonitorStatus {
+  UP
+  DOWN
+  DEGRADED
+  PENDING
+}
+
+enum AlertType {
+  DOWN
+  RECOVERY
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  monitors     Monitor[]
+}
+
+model Monitor {
+  id                   String        @id @default(cuid())
+  userId               String
+  name                 String
+  url                  String
+  slug                 String        @unique
+  checkIntervalMinutes Int
+  currentStatus        MonitorStatus @default(PENDING)
+  createdAt            DateTime      @default(now())
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  checkResults CheckResult[]
+  incidents    Incident[]
+  statusPage   StatusPage?
+  alerts       Alert[]
+
+  @@index([userId])
+  @@index([currentStatus])
+}
+
+model CheckResult {
+  id             String   @id @default(cuid())
+  monitorId      String
+  statusCode     Int?
+  responseTimeMs Int?
+  success        Boolean
+  errorMessage   String?
+  checkedAt      DateTime @default(now())
+
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+
+  @@index([monitorId])
+  @@index([checkedAt])
+  @@index([monitorId, checkedAt])
+}
+
+model Incident {
+  id                      String    @id @default(cuid())
+  monitorId               String
+  startedAt               DateTime
+  resolvedAt              DateTime?
+  downtimeDurationSeconds Int?
+
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  alerts  Alert[]
+
+  @@index([monitorId])
+  @@index([resolvedAt])
+}
+
+model StatusPage {
+  id        String   @id @default(cuid())
+  monitorId String   @unique
+  isPublic  Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  monitor Monitor @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+}
+
+model Alert {
+  id         String    @id @default(cuid())
+  monitorId  String
+  incidentId String?
+  type       AlertType
+  message    String
+  createdAt  DateTime  @default(now())
+
+  monitor  Monitor   @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+  incident Incident? @relation(fields: [incidentId], references: [id], onDelete: SetNull)
+
+  @@index([monitorId])
+  @@index([incidentId])
+  @@index([createdAt])
+}
