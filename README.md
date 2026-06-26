@@ -1,90 +1,194 @@
 # DevOpsPulse
 
-DevOpsPulse is a full-stack uptime monitoring platform built as a portfolio project. It includes a TypeScript React frontend, a TypeScript Express API, Prisma models for PostgreSQL, JWT auth through an httpOnly cookie, public status pages, in-app alerts, and an externally triggered checker endpoint.
+DevOpsPulse is a full-stack uptime monitoring platform for tracking website availability, latency, incidents, recovery alerts, and public status pages.
+
+The app is deployed as a real production-style portfolio project: React on Vercel, Express on Render, PostgreSQL on Neon, and an external GitHub Actions scheduler that triggers uptime checks every 5 minutes.
+
+## Live Demo
+
+- Frontend: [https://devopspulse.vercel.app](https://devopspulse.vercel.app)
+- Backend health: [https://devopspulse-api.onrender.com/api/health](https://devopspulse-api.onrender.com/api/health)
+- Repository: [https://github.com/Aashish-cs/DevOpsPulse](https://github.com/Aashish-cs/DevOpsPulse)
+
+Demo account:
+
+```text
+Email: demo@devopspulse.local
+Password: password123
+```
+
+Users can also sign up with their own email/password, create monitors, and view private dashboards scoped to their account.
+
+## Screenshots
+
+The live demo includes real monitor checks for Google, GitHub, Vercel, and Wikipedia.
+
+### Dashboard
+
+![DevOpsPulse dashboard](docs/screenshots/dashboard.png)
+
+### Monitor Detail
+
+![DevOpsPulse monitor detail](docs/screenshots/monitor-detail.png)
+
+### Public Status Page
+
+![DevOpsPulse public status page](docs/screenshots/public-status.png)
+
+## Core Features
+
+- JWT authentication stored in an httpOnly cookie
+- User-scoped monitor CRUD
+- URL checks with status code, latency, timeout, DNS, and connection-error handling
+- Uptime percentage over `24h`, `7d`, `30d`, and `90d`
+- Latency charts with Recharts
+- Incident detection using a tested state machine
+- In-app DOWN and RECOVERY alerts
+- Public status pages with 90-day history
+- External scheduler endpoint protected by `X-Cron-Secret`
+- GitHub Actions workflow that triggers checks every 5 minutes
+
+## Tech Stack
+
+| Area | Technology |
+| --- | --- |
+| Frontend | React, Vite, TypeScript, React Router, Recharts, plain CSS |
+| Backend | Node.js, Express, TypeScript |
+| ORM | Prisma |
+| Database | PostgreSQL on Neon |
+| Auth | JWT in httpOnly cookie |
+| Scheduler | GitHub Actions scheduled workflow |
+| Deployment | Vercel frontend, Render backend |
 
 ## Architecture
 
-- `frontend/`: React + Vite + TypeScript, React Router, Recharts, plain CSS.
-- `backend/`: Node.js + Express + TypeScript, Prisma, JWT cookie auth.
-- `backend/prisma/schema.prisma`: PostgreSQL schema with users, monitors, check results, incidents, status pages, and alerts.
-- `backend/src/services/incident.ts`: pure incident state machine with unit tests.
-- `backend/src/services/checker.ts`: URL pinging and cron-triggered check orchestration.
+```text
+GitHub Actions schedule
+        |
+        | POST /api/internal/run-checks
+        v
+Render Express API  ---- Prisma ---- Neon PostgreSQL
+        ^
+        |
+Vercel React frontend
+```
 
-DevOpsPulse intentionally uses an external cron trigger instead of in-process scheduling. Render can restart or scale web services at any time, and in-process timers can drift, duplicate work, or disappear during deploys. Keeping checking behind `POST /api/internal/run-checks` lets infrastructure own the schedule while the API owns the business logic.
+The checker is intentionally not an in-process cron. Render web services can restart, sleep, or scale, so uptime checks live behind a secured API endpoint and are triggered externally. This keeps scheduling infrastructure separate from business logic and makes overlapping runs safer.
 
-PostgreSQL is used because the app relies on relational ownership checks, cascading deletes, time-range queries, indexed histories, and incident/check joins. It also maps cleanly to Neon or Supabase free-tier databases through a standard `DATABASE_URL`.
+PostgreSQL is used because this app is naturally relational: users own monitors, monitors have check results, incidents, alerts, and status pages. The schema also relies on indexed time-range queries for uptime and latency charts.
 
 ## Incident Detection
 
-Every check stores a `CheckResult` row. A check is successful only when the request completes and returns a 2xx status. Slow successful responses above 2000 ms are still successful, but they set the monitor to `DEGRADED` when no incident is open.
+The most important logic lives in `backend/src/services/incident.ts` and is tested independently.
 
-The state machine queries the latest stored check rows instead of keeping an in-memory counter:
+Rules:
 
-- No checks: `PENDING`
-- One failed check without an open incident: `UP`
-- Two or more latest consecutive failures and no open incident: open an incident, set `DOWN`, create a `DOWN` alert
-- Open incident plus latest success: resolve incident, calculate downtime, create a `RECOVERY` alert
-- No open incident plus latest slow success: `DEGRADED`
-- `DOWN` always takes precedence over `DEGRADED`, `UP`, and `PENDING`
+- Every check creates a `CheckResult`.
+- Non-2xx responses, timeouts, DNS failures, and refused connections are failed checks.
+- Successful checks slower than `2000ms` are marked as degraded, but do not create incidents.
+- Two latest consecutive failures open an incident if one is not already open.
+- A successful check resolves an open incident and creates a recovery alert.
+- Status precedence is `DOWN > DEGRADED > UP > PENDING`.
+- Failure streaks are calculated from stored database rows, not in-memory counters.
 
-## Local Setup
+## API Overview
 
-1. Install dependencies:
+Auth:
 
-   ```bash
-   npm install
-   ```
+- `POST /api/auth/signup`
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
 
-2. Copy environment files:
+Monitors:
 
-   ```bash
-   cp backend/.env.example backend/.env
-   cp frontend/.env.example frontend/.env
-   ```
+- `GET /api/monitors`
+- `POST /api/monitors`
+- `GET /api/monitors/:id`
+- `PATCH /api/monitors/:id`
+- `DELETE /api/monitors/:id`
+- `GET /api/monitors/:id/checks?range=24h|7d|30d`
+- `GET /api/monitors/:id/incidents`
+- `GET /api/monitors/:id/uptime?range=24h|7d|30d`
 
-3. Update `backend/.env` with a PostgreSQL `DATABASE_URL`, `JWT_SECRET`, `CRON_SECRET`, and `FRONTEND_URL`.
+Public:
 
-4. Generate Prisma and run migrations:
+- `GET /api/public/status/:slug`
 
-   ```bash
-   npm run prisma:generate
-   npm run prisma:migrate -w backend
-   ```
+Internal scheduler:
 
-5. Seed demo data:
+- `POST /api/internal/run-checks`
+- Requires `X-Cron-Secret`
 
-   ```bash
-   npm run seed
-   ```
+Alerts:
 
-   Demo credentials:
+- `GET /api/alerts`
 
-   - Email: `demo@devopspulse.local`
-   - Password: `password123`
+## Local Development
 
-6. Start both apps:
+Install dependencies:
 
-   ```bash
-   npm run dev
-   ```
+```bash
+npm install
+```
 
-The frontend runs on `http://localhost:5173`, and the backend runs on `http://localhost:4000`.
+Create environment files:
 
-## Triggering Checks Locally
+```bash
+cp backend/.env.example backend/.env
+cp frontend/.env.example frontend/.env
+```
+
+Configure `backend/.env`:
+
+```env
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/devopspulse?sslmode=require"
+JWT_SECRET="replace-with-a-long-random-secret"
+CRON_SECRET="replace-with-a-long-random-cron-secret"
+FRONTEND_URL="http://localhost:5173"
+PORT=4000
+```
+
+Configure `frontend/.env`:
+
+```env
+VITE_API_URL="http://localhost:4000/api"
+```
+
+Run migrations and seed data:
+
+```bash
+npm run prisma:migrate -w backend
+npm run seed
+```
+
+Start both apps:
+
+```bash
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173
+```
+
+## Trigger Checks Manually
 
 ```bash
 curl -X POST http://localhost:4000/api/internal/run-checks \
   -H "X-Cron-Secret: YOUR_CRON_SECRET"
 ```
 
-The response includes a summary such as:
+Example response:
 
 ```json
 {
-  "checked": 12,
-  "skipped": 0,
+  "checked": 4,
+  "skipped": 3,
   "failed": 0,
-  "incidentsOpened": 1,
+  "incidentsOpened": 0,
   "incidentsResolved": 0,
   "errors": []
 }
@@ -92,15 +196,49 @@ The response includes a summary such as:
 
 ## Scripts
 
-- `npm run dev`: run frontend and backend together.
-- `npm run build`: type-check and build both apps.
-- `npm run test`: run backend unit tests.
-- `npm run prisma:generate`: generate Prisma client.
-- `npm run seed`: seed demo data.
+```bash
+npm run dev                 # Run frontend and backend together
+npm run build               # Build both apps
+npm run test                # Run backend unit tests
+npm run prisma:generate     # Generate Prisma client
+npm run seed                # Seed demo user and monitor history
+```
 
-## V1 Extension Points
+## Deployment
 
-- Real email/SMS delivery can be added from the `Alert` model without changing incident detection.
-- Teams/shared monitors can be added by replacing direct `Monitor.userId` ownership with memberships.
-- Custom thresholds can be added to `Monitor` and passed into the pure evaluator.
-- Status page customization can extend the `StatusPage` model.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for Render, Vercel, Neon, and scheduler setup.
+
+Current production setup:
+
+- Vercel serves the React frontend.
+- Render runs the Express API.
+- Neon stores PostgreSQL data.
+- GitHub Actions calls the internal check endpoint every 5 minutes.
+
+## Project Structure
+
+```text
+backend/
+  prisma/
+    schema.prisma
+    seed.ts
+  src/
+    routes/
+    services/
+    middleware/
+    utils/
+
+frontend/
+  src/
+    api/
+    auth/
+    components/
+    pages/
+```
+
+## Extension Points
+
+- Email/SMS alerts can be added from the existing `Alert` model.
+- Team/shared monitors can be layered on top of monitor ownership.
+- Custom thresholds can be added to `Monitor` and passed into the incident evaluator.
+- Status page branding can extend the `StatusPage` model.
