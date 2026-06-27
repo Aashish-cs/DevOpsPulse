@@ -37,16 +37,22 @@ You can also use the included `render.yaml` as a starter Blueprint for the backe
 
 After the first deploy, run Prisma migrations against the same database.
 
-## Render Cron Job
+## Scheduler on cron-job.org
 
-Create a separate Render Cron Job that calls the backend web service every 5 minutes.
+Create a free cron-job.org job that calls the backend web service every minute.
 
-- Schedule: `*/5 * * * *`
-- Command:
+- URL: `https://YOUR-BACKEND.onrender.com/api/internal/run-checks`
+- Request method: `POST`
+- Schedule: `* * * * *`
+- Header:
+  - Name: `X-Cron-Secret`
+  - Value: `YOUR_CRON_SECRET`
+
+You can also use cron-job.org's cURL importer with:
 
 ```bash
-curl -X POST https://YOUR-BACKEND.onrender.com/api/internal/run-checks \
-  -H "X-Cron-Secret: YOUR_CRON_SECRET"
+curl -X POST 'https://YOUR-BACKEND.onrender.com/api/internal/run-checks' \
+  -H 'X-Cron-Secret: YOUR_CRON_SECRET'
 ```
 
 The endpoint is intentionally protected by `X-Cron-Secret` instead of user auth because it is called by infrastructure.

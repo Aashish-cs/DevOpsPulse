@@ -2,7 +2,7 @@
 
 DevOpsPulse is a full-stack uptime monitoring platform for tracking website availability, latency, incidents, recovery alerts, and public status pages.
 
-The app is deployed as a real production-style portfolio project: React on Vercel, Express on Render, PostgreSQL on Neon, and an external GitHub Actions scheduler that triggers uptime checks every 5 minutes.
+The app is deployed as a real production-style portfolio project: React on Vercel, Express on Render, PostgreSQL on Neon, and a cron-job.org scheduler that triggers protected uptime checks every minute.
 
 ## Live Demo
 
@@ -46,7 +46,7 @@ The live demo includes real monitor checks for Google, GitHub, Vercel, and Wikip
 - In-app DOWN and RECOVERY alerts
 - Public status pages with 90-day history
 - External scheduler endpoint protected by `X-Cron-Secret`
-- GitHub Actions workflow that triggers checks every 5 minutes
+- cron-job.org scheduler that triggers checks every minute
 
 ## Tech Stack
 
@@ -57,13 +57,13 @@ The live demo includes real monitor checks for Google, GitHub, Vercel, and Wikip
 | ORM | Prisma |
 | Database | PostgreSQL on Neon |
 | Auth | JWT in httpOnly cookie |
-| Scheduler | GitHub Actions scheduled workflow |
+| Scheduler | cron-job.org external cron |
 | Deployment | Vercel frontend, Render backend |
 
 ## Architecture
 
 ```text
-GitHub Actions schedule
+cron-job.org schedule
         |
         | POST /api/internal/run-checks
         v
@@ -213,7 +213,7 @@ Current production setup:
 - Vercel serves the React frontend.
 - Render runs the Express API.
 - Neon stores PostgreSQL data.
-- GitHub Actions calls the internal check endpoint every 5 minutes.
+- cron-job.org calls the internal check endpoint every minute.
 
 ## Project Structure
 
