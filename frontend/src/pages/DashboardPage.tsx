@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { api } from "../api/client";
 import { AddMonitorModal } from "../components/AddMonitorModal";
 import { StatusBadge } from "../components/StatusBadge";
-import type { MonitorSummary } from "../types";
+import type { Monitor, MonitorSummary } from "../types";
 import { formatPercent, formatResponseTime, relativeTime } from "../utils";
 
 export function DashboardPage() {
@@ -12,7 +12,7 @@ export function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
-  const [selectedMonitor, setSelectedMonitor] = useState<MonitorSummary | null>(null);
+  const [selectedMonitor, setSelectedMonitor] = useState<Monitor | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -40,10 +40,16 @@ export function DashboardPage() {
     setModalMode("create");
   }
 
-  function openEditModal(monitor: MonitorSummary) {
-    setSelectedMonitor(monitor);
+  async function openEditModal(monitor: MonitorSummary) {
     setFormError(null);
-    setModalMode("edit");
+
+    try {
+      const response = await api.getMonitor(monitor.id);
+      setSelectedMonitor(response.monitor);
+      setModalMode("edit");
+    } catch (caught) {
+      setError(caught instanceof Error ? caught.message : "Could not load monitor");
+    }
   }
 
   function closeFormModal() {
@@ -137,7 +143,7 @@ export function DashboardPage() {
                 <button
                   className="icon-button"
                   type="button"
-                  onClick={() => openEditModal(monitor)}
+                  onClick={() => void openEditModal(monitor)}
                   aria-label={`Edit ${monitor.name}`}
                   title={`Edit ${monitor.name}`}
                 >
