@@ -1,6 +1,6 @@
 import { Activity } from "lucide-react";
 import { useState, type FormEvent } from "react";
-import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 
 type AuthMode = "login" | "signup";
@@ -102,6 +102,11 @@ export function LoginPage() {
               required
             />
           </label>
+          {mode === "login" ? (
+            <Link className="auth-helper-link" to="/forgot-password">
+              Forgot password?
+            </Link>
+          ) : null}
           {error ? <p className="form-error">{error}</p> : null}
           <button className="primary-button wide" type="submit" disabled={submitting}>
             {submitting ? "Working..." : mode === "login" ? "Login" : "Create account"}

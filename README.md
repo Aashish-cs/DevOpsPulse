@@ -38,6 +38,7 @@ The live demo includes real monitor checks for Google, GitHub, Vercel, and Wikip
 ## Core Features
 
 - JWT authentication stored in an httpOnly cookie
+- Password reset flow with expiring, single-use reset tokens
 - User-scoped monitor CRUD
 - URL checks with status code, latency, timeout, DNS, and connection-error handling
 - Uptime percentage over `24h`, `7d`, `30d`, and `90d`
@@ -97,6 +98,8 @@ Auth:
 
 - `POST /api/auth/signup`
 - `POST /api/auth/login`
+- `POST /api/auth/forgot-password`
+- `POST /api/auth/reset-password`
 - `POST /api/auth/logout`
 - `GET /api/auth/me`
 
@@ -147,6 +150,9 @@ JWT_SECRET="replace-with-a-long-random-secret"
 CRON_SECRET="replace-with-a-long-random-cron-secret"
 FRONTEND_URL="http://localhost:5173"
 PORT=4000
+RESEND_API_KEY=""
+PASSWORD_RESET_FROM_EMAIL="DevOpsPulse <onboarding@resend.dev>"
+PASSWORD_RESET_EXPOSE_LINKS="false"
 ```
 
 Configure `frontend/.env`:

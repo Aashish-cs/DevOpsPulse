@@ -20,11 +20,26 @@ enum AlertType {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  passwordHash String
-  createdAt    DateTime  @default(now())
-  monitors     Monitor[]
+  id                  String               @id @default(cuid())
+  email               String               @unique
+  passwordHash        String
+  createdAt           DateTime             @default(now())
+  monitors            Monitor[]
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Monitor {

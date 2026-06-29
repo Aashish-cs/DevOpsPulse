@@ -31,6 +31,8 @@ Create a Render Web Service, not a cron service.
   - `JWT_SECRET`: long random string, at least 32 characters
   - `CRON_SECRET`: long random string used by the external cron trigger
   - `FRONTEND_URL`: your Vercel frontend URL, for example `https://devopspulse.vercel.app`
+  - `RESEND_API_KEY`: Resend API key for password reset emails
+  - `PASSWORD_RESET_FROM_EMAIL`: verified sender, for example `DevOpsPulse <alerts@yourdomain.com>`
   - `NODE_ENV`: `production`
 
 You can also use the included `render.yaml` as a starter Blueprint for the backend web service. Set the secret environment variables in Render after creating the service.

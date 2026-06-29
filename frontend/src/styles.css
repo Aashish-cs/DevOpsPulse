@@ -360,6 +360,25 @@ h2 {
   color: var(--danger);
 }
 
+.form-success {
+  color: var(--success);
+}
+
+.auth-helper-link,
+.inline-link {
+  justify-self: flex-start;
+}
+
+.auth-helper-link {
+  color: var(--accent-strong);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.auth-helper-link:hover {
+  text-decoration: underline;
+}
+
 .empty-state {
   gap: 0.5rem;
 }

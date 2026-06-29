@@ -47,6 +47,10 @@ export const api = {
     request<{ user: User }>("/auth/signup", { method: "POST", body }),
   login: (body: { email: string; password: string }) =>
     request<{ user: User }>("/auth/login", { method: "POST", body }),
+  forgotPassword: (body: { email: string }) =>
+    request<{ message: string; resetUrl?: string }>("/auth/forgot-password", { method: "POST", body }),
+  resetPassword: (body: { token: string; password: string }) =>
+    request<{ message: string }>("/auth/reset-password", { method: "POST", body }),
   logout: () => request<void>("/auth/logout", { method: "POST" }),
   me: () => request<{ user: User }>("/auth/me"),
 
