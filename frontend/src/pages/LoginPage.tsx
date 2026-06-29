@@ -5,13 +5,16 @@ import { useAuth } from "../auth/AuthContext";
 
 type AuthMode = "login" | "signup";
 
+const demoEmail = "demo@devopspulse.local";
+const demoPassword = "password123";
+
 export function LoginPage() {
   const { user, login, signup } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [mode, setMode] = useState<AuthMode>("login");
-  const [email, setEmail] = useState("demo@devopspulse.local");
-  const [password, setPassword] = useState("password123");
+  const [email, setEmail] = useState(demoEmail);
+  const [password, setPassword] = useState(demoPassword);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const redirectTo = (location.state as { from?: { pathname: string } } | null)?.from?.pathname ?? "/dashboard";
@@ -40,6 +43,20 @@ export function LoginPage() {
     }
   }
 
+  function selectMode(nextMode: AuthMode) {
+    setMode(nextMode);
+    setError(null);
+
+    if (nextMode === "login") {
+      setEmail(demoEmail);
+      setPassword(demoPassword);
+      return;
+    }
+
+    setEmail("");
+    setPassword("");
+  }
+
   return (
     <main className="auth-screen">
       <section className="auth-panel">
@@ -54,7 +71,7 @@ export function LoginPage() {
           <button
             className={mode === "login" ? "active" : ""}
             type="button"
-            onClick={() => setMode("login")}
+            onClick={() => selectMode("login")}
             role="tab"
             aria-selected={mode === "login"}
           >
@@ -63,7 +80,7 @@ export function LoginPage() {
           <button
             className={mode === "signup" ? "active" : ""}
             type="button"
-            onClick={() => setMode("signup")}
+            onClick={() => selectMode("signup")}
             role="tab"
             aria-selected={mode === "signup"}
           >
