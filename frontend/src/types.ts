@@ -10,6 +10,7 @@ export type User = {
 export type MonitorSummary = {
   id: string;
   name: string;
+  url: string;
   slug: string;
   currentStatus: MonitorStatus;
   checkIntervalMinutes: number;

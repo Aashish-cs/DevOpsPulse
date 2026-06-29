@@ -1,18 +1,44 @@
 import { X } from "lucide-react";
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+
+type MonitorFormInput = {
+  name: string;
+  url: string;
+  checkIntervalMinutes: number;
+};
 
 type AddMonitorModalProps = {
   open: boolean;
+  mode: "create" | "edit";
   submitting: boolean;
   error: string | null;
+  initialValues?: MonitorFormInput;
   onClose: () => void;
-  onSubmit: (input: { name: string; url: string; checkIntervalMinutes: number }) => Promise<void>;
+  onSubmit: (input: MonitorFormInput) => Promise<boolean>;
 };
 
-export function AddMonitorModal({ open, submitting, error, onClose, onSubmit }: AddMonitorModalProps) {
+export function AddMonitorModal({
+  open,
+  mode,
+  submitting,
+  error,
+  initialValues,
+  onClose,
+  onSubmit
+}: AddMonitorModalProps) {
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
   const [checkIntervalMinutes, setCheckIntervalMinutes] = useState(5);
+
+  useEffect(() => {
+    if (!open) {
+      return;
+    }
+
+    setName(initialValues?.name ?? "");
+    setUrl(initialValues?.url ?? "");
+    setCheckIntervalMinutes(initialValues?.checkIntervalMinutes ?? 5);
+  }, [initialValues?.checkIntervalMinutes, initialValues?.name, initialValues?.url, open]);
 
   if (!open) {
     return null;
@@ -20,17 +46,24 @@ export function AddMonitorModal({ open, submitting, error, onClose, onSubmit }: 
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    await onSubmit({ name, url, checkIntervalMinutes });
-    setName("");
-    setUrl("");
-    setCheckIntervalMinutes(5);
+    const succeeded = await onSubmit({ name: name.trim(), url: url.trim(), checkIntervalMinutes });
+
+    if (succeeded && mode === "create") {
+      setName("");
+      setUrl("");
+      setCheckIntervalMinutes(5);
+    }
   }
+
+  const title = mode === "edit" ? "Edit monitor" : "Add monitor";
+  const submitText = mode === "edit" ? "Save changes" : "Add monitor";
+  const submittingText = mode === "edit" ? "Saving..." : "Adding...";
 
   return (
     <div className="modal-backdrop" role="presentation">
       <div className="modal" role="dialog" aria-modal="true" aria-labelledby="add-monitor-title">
         <div className="modal-header">
-          <h2 id="add-monitor-title">Add monitor</h2>
+          <h2 id="add-monitor-title">{title}</h2>
           <button className="icon-button" type="button" onClick={onClose} aria-label="Close" title="Close">
             <X size={18} />
           </button>
@@ -69,7 +102,7 @@ export function AddMonitorModal({ open, submitting, error, onClose, onSubmit }: 
               Cancel
             </button>
             <button className="primary-button" type="submit" disabled={submitting}>
-              {submitting ? "Adding..." : "Add monitor"}
+              {submitting ? submittingText : submitText}
             </button>
           </div>
         </form>

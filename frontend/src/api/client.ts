@@ -53,6 +53,8 @@ export const api = {
   listMonitors: () => request<{ monitors: MonitorSummary[] }>("/monitors"),
   createMonitor: (body: { name: string; url: string; checkIntervalMinutes: number }) =>
     request<{ monitor: Monitor }>("/monitors", { method: "POST", body }),
+  updateMonitor: (id: string, body: { name: string; url: string; checkIntervalMinutes: number }) =>
+    request<{ monitor: Monitor }>(`/monitors/${id}`, { method: "PATCH", body }),
   deleteMonitor: (id: string) => request<void>(`/monitors/${id}`, { method: "DELETE" }),
   getMonitor: (id: string) =>
     request<{

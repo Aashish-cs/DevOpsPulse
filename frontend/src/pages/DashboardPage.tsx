@@ -1,4 +1,4 @@
-import { ExternalLink, Plus, Trash2 } from "lucide-react";
+import { ExternalLink, Pencil, Plus, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { api } from "../api/client";
@@ -11,7 +11,8 @@ export function DashboardPage() {
   const [monitors, setMonitors] = useState<MonitorSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [modalOpen, setModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<"create" | "edit" | null>(null);
+  const [selectedMonitor, setSelectedMonitor] = useState<MonitorSummary | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -33,16 +34,41 @@ export function DashboardPage() {
     }
   }
 
-  async function handleCreate(input: { name: string; url: string; checkIntervalMinutes: number }) {
+  function openCreateModal() {
+    setSelectedMonitor(null);
+    setFormError(null);
+    setModalMode("create");
+  }
+
+  function openEditModal(monitor: MonitorSummary) {
+    setSelectedMonitor(monitor);
+    setFormError(null);
+    setModalMode("edit");
+  }
+
+  function closeFormModal() {
+    setModalMode(null);
+    setSelectedMonitor(null);
+    setFormError(null);
+  }
+
+  async function handleSave(input: { name: string; url: string; checkIntervalMinutes: number }) {
     setSubmitting(true);
     setFormError(null);
 
     try {
-      await api.createMonitor(input);
-      setModalOpen(false);
+      if (modalMode === "edit" && selectedMonitor) {
+        await api.updateMonitor(selectedMonitor.id, input);
+      } else {
+        await api.createMonitor(input);
+      }
+
+      closeFormModal();
       await loadMonitors();
+      return true;
     } catch (caught) {
-      setFormError(caught instanceof Error ? caught.message : "Could not create monitor");
+      setFormError(caught instanceof Error ? caught.message : "Could not save monitor");
+      return false;
     } finally {
       setSubmitting(false);
     }
@@ -60,7 +86,7 @@ export function DashboardPage() {
           <h1>Dashboard</h1>
           <p>{monitors.length} monitors tracked</p>
         </div>
-        <button className="primary-button" type="button" onClick={() => setModalOpen(true)}>
+        <button className="primary-button" type="button" onClick={openCreateModal}>
           <Plus size={18} />
           <span>Add monitor</span>
         </button>
@@ -107,26 +133,47 @@ export function DashboardPage() {
                 <ExternalLink size={16} />
                 <span>Status</span>
               </Link>
-              <button
-                className="icon-button danger"
-                type="button"
-                onClick={() => void handleDelete(monitor.id)}
-                aria-label={`Delete ${monitor.name}`}
-                title={`Delete ${monitor.name}`}
-              >
-                <Trash2 size={17} />
-              </button>
+              <div className="icon-action-group">
+                <button
+                  className="icon-button"
+                  type="button"
+                  onClick={() => openEditModal(monitor)}
+                  aria-label={`Edit ${monitor.name}`}
+                  title={`Edit ${monitor.name}`}
+                >
+                  <Pencil size={17} />
+                </button>
+                <button
+                  className="icon-button danger"
+                  type="button"
+                  onClick={() => void handleDelete(monitor.id)}
+                  aria-label={`Delete ${monitor.name}`}
+                  title={`Delete ${monitor.name}`}
+                >
+                  <Trash2 size={17} />
+                </button>
+              </div>
             </div>
           </article>
         ))}
       </div>
 
       <AddMonitorModal
-        open={modalOpen}
+        open={modalMode !== null}
+        mode={modalMode ?? "create"}
         submitting={submitting}
         error={formError}
-        onClose={() => setModalOpen(false)}
-        onSubmit={handleCreate}
+        initialValues={
+          selectedMonitor
+            ? {
+                name: selectedMonitor.name,
+                url: selectedMonitor.url,
+                checkIntervalMinutes: selectedMonitor.checkIntervalMinutes
+              }
+            : undefined
+        }
+        onClose={closeFormModal}
+        onSubmit={handleSave}
       />
     </section>
   );

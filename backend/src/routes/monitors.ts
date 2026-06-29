@@ -39,6 +39,7 @@ router.get(
         return {
           id: monitor.id,
           name: monitor.name,
+          url: monitor.url,
           slug: monitor.slug,
           currentStatus: monitor.currentStatus,
           checkIntervalMinutes: monitor.checkIntervalMinutes,
